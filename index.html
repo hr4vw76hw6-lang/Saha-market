@@ -289,5 +289,77 @@ function demo() {
 }
 </script>
 
-</body>
+</body> 
+  <!-- SAHA MARKET DEMO CART -->
+<section id="cart" style="
+  padding:20px;
+  background:#111319;
+  color:white;
+  font-family:Arial,sans-serif;
+">
+  <h2 style="color:#e7bd50">🛒 Моя корзина</h2>
+
+  <p id="cartCount" style="margin:12px 0;color:#aaa">
+    Товаров: 0
+  </p>
+
+  <div id="cartItems"></div>
+
+  <button onclick="clearCart()" style="
+    margin-top:15px;
+    padding:12px;
+    background:#e7bd50;
+    border:0;
+    border-radius:8px;
+    font-weight:bold;
+  ">
+    Очистить корзину
+  </button>
+</section>
+
+<script>
+let sahaCart = [];
+
+function addToCart(name) {
+  sahaCart.push(name);
+  renderCart();
+  alert(name + " добавлен в корзину!");
+}
+
+function renderCart() {
+  const items = document.getElementById("cartItems");
+  const count = document.getElementById("cartCount");
+
+  count.textContent = "Товаров: " + sahaCart.length;
+  items.innerHTML = "";
+
+  sahaCart.forEach((name, index) => {
+    const item = document.createElement("div");
+
+    item.style.padding = "12px";
+    item.style.marginTop = "8px";
+    item.style.background = "#20232a";
+    item.style.borderRadius = "8px";
+
+    item.textContent = name + " ";
+
+    const remove = document.createElement("button");
+    remove.textContent = "Удалить";
+    remove.style.marginLeft = "10px";
+
+    remove.onclick = function() {
+      sahaCart.splice(index, 1);
+      renderCart();
+    };
+
+    item.appendChild(remove);
+    items.appendChild(item);
+  });
+}
+
+function clearCart() {
+  sahaCart = [];
+  renderCart();
+}
+</script>
 </html>
