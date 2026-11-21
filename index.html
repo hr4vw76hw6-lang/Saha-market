@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PUBG Shop — UC и аккаунты</title>
+<style>
+:root{--bg:#0f1115;--card:#1a1d24;--tx:#fff;--mut:#8b93a1;--ac:#f5a623}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,sans-serif}
+header{padding:28px 16px;text-align:center;background:linear-gradient(135deg,#1b1f2a,#0f1115)}
+header h1{margin:0;font-size:28px}header h1 span{color:var(--ac)}header p{color:var(--mut);margin:8px 0 0}
+main{max-width:900px;margin:0 auto;padding:16px}
+.tabs{display:flex;gap:8px;margin-bottom:16px}
+.tabs button{flex:1;padding:13px;border:0;border-radius:12px;background:var(--card);color:var(--mut);font-size:16px;cursor:pointer}
+.tabs .on{background:var(--ac);color:#000;font-weight:700}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+.card{background:var(--card);border-radius:14px;padding:16px}
+.big{font-size:20px;font-weight:700}.mut{color:var(--mut);font-size:14px;margin:6px 0}.price{color:var(--ac);font-weight:700;margin-bottom:10px}
+.btn{width:100%;padding:12px;border:0;border-radius:10px;background:var(--ac);color:#000;font-size:15px;font-weight:700;cursor:pointer}
+.btn.sec{background:#2a2f3a;color:#fff}
+.modal{position:fixed;inset:0;background:#000a;display:none;align-items:center;justify-content:center;padding:16px;z-index:5}
+.box{background:var(--card);border-radius:16px;padding:20px;width:100%;max-width:420px;max-height:90vh;overflow:auto}
+input{width:100%;padding:13px;border-radius:10px;border:1px solid #2a2f3a;background:var(--bg);color:#fff;font-size:16px;margin:6px 0 10px}
+.pay{white-space:pre-wrap;background:var(--bg);padding:12px;border-radius:10px;margin:10px 0}
+.err{color:#ff6b6b;font-size:14px;min-height:18px}
+.bar{display:flex;gap:8px}.bar input{flex:2}select{flex:1;padding:13px;border-radius:10px;border:1px solid #2a2f3a;background:var(--bg);color:#fff;margin:6px 0 10px}
+.sbp{display:inline-block;background:#5b2bd6;border-radius:6px;padding:2px 8px;font-weight:700;font-size:13px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:6px 0}.cp{width:auto;padding:6px 10px;font-size:13px}
+footer{text-align:center;color:var(--mut);font-size:12px;padding:20px}
+</style></head><body>
+<header><h1>PUBG <span>Shop</span></h1><p>UC для PUBG Mobile и аккаунты. Оплата и выдача вручную, обычно за 5–15 минут.</p></header>
+<main>
+<div class="tabs"><button id="t1" class="on">💎 Купить UC</button><button id="t2">🎮 Аккаунты</button><button id="t3">📦 Мой заказ</button></div>
+<div id="v1" class="grid"></div><div id="v2" style="display:none"><div class="bar"><input id="qs" placeholder="Поиск аккаунта…"><select id="so"><option value="0">Сначала дешевле</option><option value="1">Сначала дороже</option></select></div><div class="grid" id="al"></div></div>
+<div id="v3" style="display:none" class="card"><div id="ord" class="mut">Заказов пока нет.</div></div>
+</main>
+<footer>Продажа аккаунтов может нарушать правила игры. Покупая, вы принимаете этот риск.</footer>
+<div class="modal" id="m"><div class="box" id="mb"></div></div>
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let cat={uc:[],accounts:[]},poll;
+const ls={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}}};
+function tab(n){[1,2,3].forEach(i=>{$('v'+i).style.display=i==n?'':'none';$('t'+i).className=i==n?'on':''});if(n==3)showOrder()}
+[1,2,3].forEach(i=>$('t'+i).onclick=()=>tab(i));
+async function load(){cat=await (await fetch('/api/catalog')).json();
+ $('v1').innerHTML=cat.uc.map(p=>`<div class="card"><div class="big">${p.uc} UC</div><div class="price">${p.price} ₽</div><div class="mut">${(p.price/p.uc).toFixed(2)} ₽ за 1 UC</div><button class="btn" onclick="buy('uc','${p.id}')">Купить</button></div>`).join('');
+ drawAcc()}
+function drawAcc(){const t=$('qs').value.toLowerCase(),d=$('so').value==1?-1:1;
+ const l=cat.accounts.filter(a=>(a.title+' '+a.descr).toLowerCase().includes(t)).sort((a,b)=>(a.price-b.price)*d);
+ $('al').innerHTML=l.length?l.map(a=>`<div class="card"><div class="big">${esc(a.title)}</div><div class="mut">${esc(a.descr)}</div><div class="price">${a.price} ₽</div><button class="btn" onclick="buy('acc',${a.id})">Купить</button></div>`).join(''):'<div class="mut">Аккаунтов не найдено</div>'}
+$('qs').oninput=drawAcc;$('so').onchange=drawAcc;
+function open_(h){$('mb').innerHTML=h;$('m').style.display='flex'}
+function cp(t){try{navigator.clipboard.writeText(t)}catch(e){}}
+function close_(){$('m').style.display='none';load()}
+function buy(type,id){
+ const uc=type=='uc',p=uc?cat.uc.find(x=>x.id==id):cat.accounts.find(x=>x.id==id);
+ open_(`<div class="big">${uc?p.uc+' UC':esc(p.title)}</div><div class="price">${p.price} ₽</div>
+ ${uc?'<label class="mut">PUBG ID</label><input id="pid" inputmode="numeric" placeholder="5123456789">':''}
+ <label class="mut">Ваш контакт (Telegram @ник или email)</label><input id="ct" placeholder="@username">
+ <div class="err" id="er"></div><button class="btn" id="go">Оформить заказ</button><button class="btn sec" style="margin-top:8px" onclick="close_()">Отмена</button>`);
+ $('go').onclick=async()=>{const body={type,contact:$('ct').value,...(uc?{pack:id,pubg_id:$('pid').value}:{id})};
+  const r=await fetch('/api/order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const d=await r.json();if(!r.ok)return $('er').textContent=d.error;
+  ls.set('order',JSON.stringify({id:d.id,token:d.token}));
+  open_(`<div class="big">Заказ #${d.id}</div><div class="mut">${esc(d.title)} — ${d.price} ₽</div><div class="mut"><span class="sbp">СБП</span> Оплата переводом по номеру телефона</div>
+  <div class="pay"><div class="row"><span>Телефон: <b>${esc(d.sbp.phone)}</b></span><button class="btn sec cp" onclick="cp('${esc(d.sbp.phone)}')">Копировать</button></div>
+  <div class="row"><span>Банк получателя: <b>${esc(d.sbp.bank)}</b></span></div>
+  <div class="row"><span>Получатель: <b>${esc(d.sbp.name)}</b></span></div>
+  <div class="row"><span>Сумма: <b>${d.price} ₽</b></span><button class="btn sec cp" onclick="cp('${d.price}')">Копировать</button></div></div>
+  <div class="mut">В приложении банка: Платежи → По номеру телефона → СБП. В комментарии укажите «Заказ #${d.id}». Переведите точную сумму и нажмите кнопку ниже.</div><button class="btn" id="pd">✅ Я оплатил</button>`);
+  $('pd').onclick=async()=>{await fetch('/api/paid',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:d.id,token:d.token})});close_();tab(3)}}}
+async function showOrder(){clearInterval(poll);const o=JSON.parse(ls.get('order')||'null');if(!o)return;
+ const f=async()=>{const r=await fetch(`/api/order?id=${o.id}&token=${o.token}`);if(!r.ok)return;const d=await r.json();
+  const st={new:'Ожидает оплаты',paid:'⏳ Оплата проверяется',done:'✅ Готово',rejected:'❌ Отклонён'}[d.status];
+  $('ord').innerHTML=`<div class="big">Заказ #${d.id}</div><div class="mut">${esc(d.title)} — ${d.price} ₽</div><div>${st}</div>`+
+   (d.secret?`<div class="pay">${esc(d.secret)}</div><div class="mut">Сохраните данные и смените пароль.</div>`:'')+
+   (d.status=='done'&&!d.secret?'<div class="mut">UC отправлены на ваш PUBG ID.</div>':'');
+  if(d.status=='done'||d.status=='rejected')clearInterval(poll)};
+ f();poll=setInterval(f,5000)}
+load();
+</script></body></html>
